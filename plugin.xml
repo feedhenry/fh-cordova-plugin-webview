@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://apache.org/cordova/ns/plugins/1.0"
+        id="com.feedhenry.plugins.webview"
+        version="0.0.1">
+
+        <name>Webview</name>
+
+                <description>
+                        This plugin allows you to open another page inside the app
+                </description>
+
+                <license>MIT</license>
+
+        <engines>
+                <engine name="cordova" version=">=2.8.0" />
+        </engines>
+
+
+        <js-module src="www/Webview.js" name="Webview">
+                <clobbers target="Webview" />
+        </js-module>
+
+        <!-- ios -->
+        <platform name="ios">
+                <config-file target="config.xml" parent="/*">
+                        <feature name="Webview">
+                                <param name="ios-package" value="Webview" />
+                        </feature>
+                </config-file>
+
+                <header-file src="src/ios/Webview.h" />
+                <source-file src="src/ios/Webview.m" />
+
+                <header-file src="src/ios/WebviewController.h" />
+                <source-file src="src/ios/WebviewController.m" />
+        </platform>
+
+</plugin>
