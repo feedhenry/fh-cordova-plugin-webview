@@ -158,8 +158,8 @@
         
         //load container.js and inject into the child webview
         NSString* containerFile = [self.cleanWebviewController pathForResource:@"fhext/js/container.js"];
-        NSString* pgFile = [self.cleanWebviewController pathForResource:@"fhext/js/cordova.ios.js"];
-        NSString* iosFile = [self.cleanWebviewController pathForResource:@"fhext/js/ios.js"];
+        NSString* pgFile = [self.cleanWebviewController pathForResource:@"cordova.js"];
+        NSString* iosFile = [self.cleanWebviewController pathForResource:@"cordova_plugins.js"];
         NSMutableString *script = [[NSMutableString alloc] initWithString:@"<script>"];
         if(nil != containerFile){
             [script appendString:[NSString stringWithContentsOfFile:containerFile encoding:NSUTF8StringEncoding error:NULL]];

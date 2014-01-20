@@ -396,13 +396,8 @@
 
 + (NSNumber*)sdkVersion
 {
-  id <UIApplicationDelegate> delegate = [[UIApplication sharedApplication] delegate];
-  if ([delegate respondsToSelector:@selector(viewController)]) {
-    id vc = [delegate performSelector:@selector(viewController)];
-    if ([vc isKindOfClass:[CDVViewController class]]) {
-      return [[vc class] sdkVersion];
-    }
-  }
+  NSLog(@"SDK version is %d", __IPHONE_OS_VERSION_MAX_ALLOWED/10000);
+  return [NSNumber numberWithFloat:__IPHONE_OS_VERSION_MAX_ALLOWED/10000];
 }
 
 +(BOOL) atLeastIOSVersion:(NSString*) version

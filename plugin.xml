@@ -31,6 +31,9 @@
                 <header-file src="src/ios/Webview.h" />
                 <source-file src="src/ios/Webview.m" />
 
+                <header-file src="src/ios/UIColor+i7HexColor.h" />
+                <source-file src="src/ios/UIColor+i7HexColor.m" />
+
                 <header-file src="src/ios/WebviewController.h" />
                 <source-file src="src/ios/WebviewController.m" />
 
