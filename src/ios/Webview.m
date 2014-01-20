@@ -9,7 +9,7 @@
 @synthesize setupAPIs;
 @synthesize _data;
 
-- (void) load:((CDVInvokedUrlCommand*)command
+- (void) load:(CDVInvokedUrlCommand*)command
 {
     NSDictionary *options = [command.arguments objectAtIndex:0];
     NSString *url = [options objectForKey:@"url"];

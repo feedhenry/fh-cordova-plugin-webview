@@ -325,16 +325,9 @@
   
   id obj = [self.pluginObjects objectForKey:className];
   if (!obj) {
-    // attempt to load the settings for this command class
-    NSDictionary* classSettings = [self.settings objectForKey:className];
+    obj = [[NSClassFromString(className)alloc] initWithWebView:webView];
     
-    if (classSettings) {
-      obj = [[NSClassFromString (className)alloc] initWithWebView:self.cleanWebView settings:classSettings];
-    } else {
-      obj = [[NSClassFromString (className)alloc] initWithWebView:self.cleanWebView];
-    }
-    
-    if ((obj != nil) && [obj isKindOfClass:[CDVPlugin class]]) {
+    if (obj != nil) {
       [self registerPlugin:obj withClassName:className];
     } else {
       NSLog(@"CDVPlugin class %@ (pluginName: %@) does not exist.", className, pluginName);
@@ -367,7 +360,7 @@
 }
 
 - (BOOL)canBecomeFirstResponder {
-	return YES;
+  return YES;
 }
 
 - (void) showActivity
