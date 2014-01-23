@@ -40,6 +40,9 @@
                 <resource-file src="resources/ios/house_icon.png" />
                 <resource-file src="resources/ios/left_arrow.png" />
                 <resource-file src="resources/ios/right_arrow.png" />
+
+                <framework src="UIKit.framework" />
+                <framework src="Foundation.framework" weak="true" />
         </platform>
 
 </plugin>
