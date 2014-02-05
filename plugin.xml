@@ -57,10 +57,10 @@
                         <activity android:name="com.feedhenry.phonegap.webview.WebViewIntent" android:label="@string/app_name" android:configChanges="orientation|keyboardHidden">       </activity>
                 </config-file>
 
-                <source-file src="src/android/OptionMenuManager.java" target-dir="com/feedhenry/phonegap/webview" />
-                <source-file src="src/android/ViewController.java" target-dir="com/feedhenry/phonegap/webview" />
-                <source-file src="src/android/WebViewContainer.java" target-dir="com/feedhenry/phonegap/webview" />
-                <source-file src="src/android/WebViewIntent.java" target-dir="com/feedhenry/phonegap/webview" />
+                <source-file src="src/android/OptionMenuManager.java" target-dir="src/com/feedhenry/phonegap/webview" />
+                <source-file src="src/android/ViewController.java" target-dir="src/com/feedhenry/phonegap/webview" />
+                <source-file src="src/android/WebViewContainer.java" target-dir="src/com/feedhenry/phonegap/webview" />
+                <source-file src="src/android/WebViewIntent.java" target-dir="src/com/feedhenry/phonegap/webview" />
 
                 <source-file src="resources/android/close.png" target-dir="res/drawable/" />
                 <source-file src="resources/android/close_off.png" target-dir="res/drawable/" />
