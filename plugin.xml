@@ -46,7 +46,7 @@
         </platform>
 
         <!-- android -->
-        <platform name="android">
+        <!-- platform name="android">
                 <config-file target="config.xml" parent="/*">
                         <feature name="Webview">
                                 <param name="android-package" value="com.feedhenry.phonegap.webview.ViewController" />
@@ -69,6 +69,6 @@
                 <source-file src="resources/android/left_arrow_white.png" target-dir="res/drawable/" />
                 <source-file src="resources/android/right_arrow.png" target-dir="res/drawable/" />
                 <source-file src="resources/android/right_arrow_white.png" target-dir="res/drawable/" />
-        </platform>
+        </platform-->
 
 </plugin>
