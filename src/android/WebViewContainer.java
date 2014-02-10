@@ -5,15 +5,17 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.cordova.CordovaChromeClient;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CordovaWebViewClient;
-import org.apache.cordova.R;
-import org.apache.cordova.api.CordovaInterface;
-import org.apache.cordova.api.LOG;
+import org.apache.cordova.CordovaInterface;
+import org.apache.cordova.LOG;
 
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -49,10 +51,13 @@ public class WebViewContainer {
   private ViewGroup mainLayout = null;
   private Object controller = null;
   
+  private Map<String, Integer> mResourceMap;
+  
   public WebViewContainer(Context pContext, Bundle settings, Object controller) {
-	  this.context = pContext;
-	  this.settings = settings;
-	  this.controller = controller;
+    this.context = pContext;
+    this.settings = settings;
+    this.controller = controller;
+    this.mResourceMap = new HashMap<String, Integer>();
   }
   
   public void onCreate() { 
@@ -66,9 +71,9 @@ public class WebViewContainer {
     mainLayout = null;
     mainLayout = new LinearLayout(this.context);
     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 0.0F);
-	mainLayout.setLayoutParams(lp);
-	((LinearLayout) mainLayout).setGravity(Gravity.CENTER_VERTICAL);
-	((LinearLayout) mainLayout).setOrientation(LinearLayout.VERTICAL);
+  mainLayout.setLayoutParams(lp);
+  ((LinearLayout) mainLayout).setGravity(Gravity.CENTER_VERTICAL);
+  ((LinearLayout) mainLayout).setOrientation(LinearLayout.VERTICAL);
    
     appView = new CordovaWebView(this.context);
     appView.resumeTimers();
@@ -95,15 +100,15 @@ public class WebViewContainer {
         super.onPageFinished(view, url);
         if(back != null){
             if (appView.canGoBack())
-                back.setImageResource(R.drawable.left_arrow_white);
+                back.setImageResource(findResourceByName("left_arrow_white", "png"));
               else
-                back.setImageResource(R.drawable.left_arrow);
+                back.setImageResource(findResourceByName("left_arrow", "png"));
         }
         if(forward != null){
             if (appView.canGoForward())
-                forward.setImageResource(R.drawable.right_arrow_white);
+                forward.setImageResource(findResourceByName("right_arrow_white", "png"));
               else
-                forward.setImageResource(R.drawable.right_arrow);
+                forward.setImageResource(findResourceByName("right_arrow", "png"));
         }
         if(null != progressbar){
           progressbar.setVisibility(ProgressBar.INVISIBLE);
@@ -121,7 +126,7 @@ public class WebViewContainer {
     appView.requestFocusFromTouch();
     appView.setVisibility(View.VISIBLE);
     if(showTitleBar){
-    	LinearLayout barlayout = new LinearLayout(this.context);
+      LinearLayout barlayout = new LinearLayout(this.context);
         LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, 0.0F);
         barlayout.setLayoutParams(blp);
         barlayout.setGravity(Gravity.CENTER_VERTICAL);
@@ -134,32 +139,32 @@ public class WebViewContainer {
     mainLayout.addView(this.appView);
     
     if(setupBridge){
-    	HttpURLConnection conn = null;
-    	StringBuffer content = new StringBuffer("");
-    	try{
-    	  content = new StringBuffer("<script>");
-    	  content.append("\n");
-    	  content.append(readAssetScript("www/fhext/js/container.js"));
+      HttpURLConnection conn = null;
+      StringBuffer content = new StringBuffer("");
+      try{
+        content = new StringBuffer("<script>");
+        content.append("\n");
+        content.append(readAssetScript("www/fhext/js/container.js"));
           content.append("\n");
-    	  content.append(readAssetScript("www/cordova.js"));
-    	  content.append("\n");
-    	  content.append(readAssetScript("www/cordova_plugins.js"));
-    	  content.append("\n");
-    	  content.append("</script>");
+        content.append(readAssetScript("www/cordova.js"));
+        content.append("\n");
+        content.append(readAssetScript("www/cordova_plugins.js"));
+        content.append("\n");
+        content.append("</script>");
           URL requestUrl = new URL(url);
-    	  conn = (HttpURLConnection) requestUrl.openConnection();
-    	  conn.setRequestProperty("User-Agent", appView.getSettings().getUserAgentString());
-    	  byte[] res = readStream(conn.getInputStream());
-    	  content.append(new String(res));
-    	}catch(Exception e){
-    	  e.printStackTrace();
-    	  content = new StringBuffer("<p>Failed to load page " + url + "</p>");
-    	} finally {
-    	  if(null != conn){
-    	    conn.disconnect();
-    	  }
-    	}
-    	appView.loadDataWithBaseURL(url, content.toString(), "text/html", "UTF-8", null);
+        conn = (HttpURLConnection) requestUrl.openConnection();
+        conn.setRequestProperty("User-Agent", appView.getSettings().getUserAgentString());
+        byte[] res = readStream(conn.getInputStream());
+        content.append(new String(res));
+      }catch(Exception e){
+        e.printStackTrace();
+        content = new StringBuffer("<p>Failed to load page " + url + "</p>");
+      } finally {
+        if(null != conn){
+          conn.disconnect();
+        }
+      }
+      appView.loadDataWithBaseURL(url, content.toString(), "text/html", "UTF-8", null);
     } else {
       appView.loadUrl(url);
     }    
@@ -170,9 +175,9 @@ public class WebViewContainer {
     appView.stopLoading();
     if(controller instanceof ViewController){
         appView.handleDestroy();
-    	((ViewController)controller).close();
+      ((ViewController)controller).close();
     }else if(controller instanceof Activity){
-    	((Activity)controller).finish();
+      ((Activity)controller).finish();
     }
   }
 
@@ -206,26 +211,26 @@ public class WebViewContainer {
     barlayout.setBackgroundColor(Color.BLACK);
     String barColor = settings.getString("titleBarColor");
     if(!barColor.equalsIgnoreCase("default")){
-    	barlayout.setBackgroundColor(Color.parseColor(barColor));
+      barlayout.setBackgroundColor(Color.parseColor(barColor));
     }
 
     LinearLayout.LayoutParams btnlayout = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0F);
     btnlayout.gravity = Gravity.CENTER_VERTICAL;
 
     close = new ImageButton(this.context);
-    close.setImageResource(R.drawable.close);
+    close.setImageResource(findResourceByName("close", "png"));
     close.setBackgroundColor(Color.TRANSPARENT);
     close.setOnTouchListener(new OnTouchListener() {
 
       public boolean onTouch(View arg0, MotionEvent event) {
 
         if (event.getAction() == clickDown) {
-          close.setImageResource(R.drawable.close_off);
+          close.setImageResource(findResourceByName("close_off", "png"));
           return true;
         }
         if (event.getAction() == clickUp) {
           close();
-          close.setImageResource(R.drawable.close);
+          close.setImageResource(findResourceByName("close", "png"));
           return true;
         }
 
@@ -241,15 +246,15 @@ public class WebViewContainer {
     
     boolean showControls = settings.getBoolean("showControls");
     if(showControls){
-    	back = new ImageButton(this.context);
-        back.setImageResource(R.drawable.left_arrow);
+      back = new ImageButton(this.context);
+        back.setImageResource(findResourceByName("left_arrow", "png"));
         back.setLayoutParams(btnlayout);
         back.setBackgroundColor(Color.TRANSPARENT);
         back.setOnTouchListener(new OnTouchListener() {
 
           public boolean onTouch(View arg0, MotionEvent event) {
             if (event.getAction() == clickDown) {
-              back.setImageResource(R.drawable.left_arrow);
+              back.setImageResource(findResourceByName("left_arrow", "png"));
               return true;
             }
             if (event.getAction() == clickUp) {
@@ -257,9 +262,9 @@ public class WebViewContainer {
                 appView.goBack();
 
               if (appView.canGoBack())
-                back.setImageResource(R.drawable.left_arrow_white);
+                back.setImageResource(findResourceByName("left_arrow_white", "png"));
               else
-                back.setImageResource(R.drawable.left_arrow);
+                back.setImageResource(findResourceByName("left_arrow", "png"));
               return true;
             }
 
@@ -268,23 +273,23 @@ public class WebViewContainer {
         });
 
         forward = new ImageButton(this.context);
-        forward.setImageResource(R.drawable.right_arrow);
+        forward.setImageResource(findResourceByName("right_arrow", "png"));
         forward.setBackgroundColor(Color.TRANSPARENT);
         forward.setLayoutParams(btnlayout);
         forward.setOnTouchListener(new OnTouchListener() {
 
           public boolean onTouch(View arg0, MotionEvent event) {
             if (event.getAction() == clickDown) {
-              forward.setImageResource(R.drawable.right_arrow);
+              forward.setImageResource(findResourceByName("right_arrow", "png"));
               return true;
             }
             if (event.getAction() == clickUp) {
               if (appView.canGoForward())
                 appView.goForward();
               if (appView.canGoForward())
-                forward.setImageResource(R.drawable.right_arrow_white);
+                forward.setImageResource(findResourceByName("right_arrow_white", "png"));
               else
-                forward.setImageResource(R.drawable.right_arrow);
+                forward.setImageResource(findResourceByName("right_arrow", "png"));
               return true;
             }
 
@@ -293,7 +298,7 @@ public class WebViewContainer {
         });
 
         home = new ImageButton(this.context);
-        home.setImageResource(R.drawable.house_icon);
+        home.setImageResource(findResourceByName("house_icon", "png"));
         home.setBackgroundColor(Color.TRANSPARENT);
         home.setLayoutParams(btnlayout);
         home.setOnTouchListener(new OnTouchListener() {
@@ -327,30 +332,41 @@ public class WebViewContainer {
   }
   
   public ViewGroup getView(){
-	  return mainLayout;
+    return mainLayout;
   }
   
   public byte[] readStream(InputStream in) throws Exception {
-	  BufferedInputStream bis = new BufferedInputStream(in);
-	  ByteArrayOutputStream bos = new ByteArrayOutputStream();
-	  byte[] buffer = new byte[1024];
-	  int count = 0;
-	  while((count = bis.read(buffer)) > -1){
-		  bos.write(buffer, 0, count);
-	  }
-	  return bos.toByteArray();
+    BufferedInputStream bis = new BufferedInputStream(in);
+    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+    byte[] buffer = new byte[1024];
+    int count = 0;
+    while((count = bis.read(buffer)) > -1){
+      bos.write(buffer, 0, count);
+    }
+    return bos.toByteArray();
   }
   
   public String readAssetScript(String pFileName) {
-	  String content = "";
-	  try{
-		  byte[] script = readStream(this.context.getAssets().open(pFileName));
-		  content = new String(script, "UTF-8");
-		  LOG.d("WebViewContainer", "Loaded file " + pFileName + ": length :" + content.length());
-	  }catch(Exception e){
-		  LOG.e("WebViewContainer", "Failed to load script file " + pFileName, e);
-	  }
-	  return content;
+    String content = "";
+    try{
+      byte[] script = readStream(this.context.getAssets().open(pFileName));
+      content = new String(script, "UTF-8");
+      LOG.d("WebViewContainer", "Loaded file " + pFileName + ": length :" + content.length());
+    }catch(Exception e){
+      LOG.e("WebViewContainer", "Failed to load script file " + pFileName, e);
+    }
+    return content;
+  }
+  
+  private int findResourceByName(String pName, String pExt){
+    String resourceName = pName + "." + pExt;
+    Integer resId = mResourceMap.get(resourceName);
+    if(null == resId){
+      Application app = ((CordovaInterface)this.context).getActivity().getApplication();
+      resId = app.getResources().getIdentifier(pName, pExt, app.getPackageName());
+      mResourceMap.put(resourceName, resId);
+    }
+    return resId;
   }
 
 }
