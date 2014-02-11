@@ -4,17 +4,18 @@ import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.json.JSONArray;
 
-import android.app.Activity;
-import android.content.BroadcastReceiver;
+import android.app.Dialog;
 import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
-import android.graphics.Color;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.Gravity;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.ViewGroup;
-import android.view.ViewGroup.MarginLayoutParams;
-import android.widget.AbsoluteLayout;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.RelativeLayout;
 
 @SuppressWarnings("deprecation")
@@ -26,23 +27,13 @@ public class ViewController extends CordovaPlugin {
   boolean visible = false;
   int success = 0;
   int failure = 1;
-  public static final int START_WEBVIEW_REQUEST = 4;
-  Intent intent;
   private WebViewContainer webviewContainer;
-  private WebViewUpdateReceiver mReceiver;
-  
-  public static final String BROADCAST_ACTION_FILTER = "com.feedhenry.android.webview.urlChanged";
+  private Dialog webviewDialog;
   
   private static final String TAG = "ViewController";
 
   public ViewController() {
     
-  }
-
-  public void closeView() {
-    status = closed;
-    this.cordova.getActivity().unregisterReceiver(mReceiver);
-    jsCallBack(success, "closed");
   }
 
   public boolean isSynch(String action) {
@@ -70,43 +61,56 @@ public class ViewController extends CordovaPlugin {
         final int y = args.getInt(3);
         final int width = args.getInt(4);
         final int height = args.getInt(5); 
-        if(x!=0 || y!=0 || width !=0 || height !=0){
-          webviewContainer = new WebViewContainer((Context)this.cordova, data, this);
-          final WebViewContainer c = webviewContainer;
-          
-          this.cordova.getActivity().runOnUiThread(new Runnable(){
-            @Override
-            public void run() {
-              c.onCreate();
-              RelativeLayout.LayoutParams rl = new RelativeLayout.LayoutParams(width == 0 ? ViewGroup.LayoutParams.FILL_PARENT : (width+x), height == 0? ViewGroup.LayoutParams.FILL_PARENT : (height+y));
-              c.getView().setTag("webviewcontainer");
-              c.getView().setPadding(x, y, 0, 0);
-              c.getView().setBackgroundColor(Color.TRANSPARENT);
-              ViewGroup root = (ViewGroup) webView.getParent().getParent();
-              root.addView(c.getView(), rl);
-              root.requestLayout();
+        webviewContainer = new WebViewContainer((Context)this.cordova, data, this);
+        final WebViewContainer c = webviewContainer;
+        
+        this.cordova.getActivity().runOnUiThread(new Runnable(){
+          @Override
+          public void run() {
+            webviewDialog = new WebviewDialog(cordova.getActivity(), android.R.style.Theme_NoTitleBar);
+            webviewDialog.getWindow().getAttributes().windowAnimations = android.R.style.Animation_Activity;
+            webviewDialog.requestWindowFeature(Window.FEATURE_NO_TITLE);
+            webviewDialog.setCancelable(true);
+            webviewDialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+                    public void onDismiss(DialogInterface dialog) {
+                        close();
+                    }
+            });
+            
+            c.onCreate();
+            
+            WindowManager.LayoutParams lp = new WindowManager.LayoutParams();
+            lp.copyFrom(webviewDialog.getWindow().getAttributes());
+            lp.width = width == 0? WindowManager.LayoutParams.MATCH_PARENT : (width);
+            lp.height = height == 0? WindowManager.LayoutParams.MATCH_PARENT: (height);
+            lp.gravity = Gravity.TOP | Gravity.LEFT;
+            lp.x = x;
+            lp.y = y;
+            if(width != 0 || height != 0 || x != 0 || y != 0){
+              c.setEmbedMode(true);
             }
-          });
-        } else {
-          if (intent == null) {
-            intent = new Intent( (Activity)this.cordova, WebViewIntent.class);
+            webviewDialog.getWindow().setAttributes(lp);
+            webviewDialog.setContentView(c.getView());
+            webviewDialog.show();
+            
+            /*webviewDialog.setOnKeyListener(new Dialog.OnKeyListener(){
+
+              @Override
+              public boolean onKey(DialogInterface arg0, int keyCode, KeyEvent event) {
+                if(keyCode == KeyEvent.KEYCODE_BACK){
+                  close();
+                  return true;
+                }
+                return false;
+              }
+              
+            });*/
           }
-          
-          if(null == mReceiver){
-            mReceiver = new WebViewUpdateReceiver();
-          }
-          
-          IntentFilter filter = new IntentFilter(BROADCAST_ACTION_FILTER);
-                this.cordova.getActivity().registerReceiver(mReceiver, filter);
-                Log.d(TAG, "receiver registered");
-          intent.putExtra("settings", data);
-          this.cordova.startActivityForResult(this, intent, START_WEBVIEW_REQUEST);
-        }
-        //Thread.sleep(500);
+        });
       }
       else
       {
-      jsCallBack(failure,"already openned");
+        jsCallBack(failure,"already openned");
       }
 
     } catch (Exception e) {
@@ -114,27 +118,27 @@ public class ViewController extends CordovaPlugin {
       jsCallBack(failure, e.toString());
     }
   }
-  
-   public void close(){
+
+  public void close(){
      Log.d("ViewController", "close intent");
-     if(status.equals(openned) ){
-       if(null != intent){
-         this.cordova.getActivity().finishActivity(START_WEBVIEW_REQUEST);
-       } else if(null != webviewContainer){
-           jsCallBack(success, "closed");
-         final WebViewContainer c = webviewContainer;
-         this.cordova.getActivity().runOnUiThread(new Runnable(){
-        @Override
-        public void run() {
-         ViewGroup root = (ViewGroup) webView.getParent().getParent();
-         root.removeView(c.getView());
-        }
-           
-         });
-       }
+     if(null != webviewContainer && status.equals(openned)){
+       final WebViewContainer c = webviewContainer;
+       this.cordova.getActivity().runOnUiThread(new Runnable(){
+          @Override
+          public void run() {
+            if(null != webviewDialog){
+              c.getWebView().handleDestroy();
+              webviewDialog.dismiss();
+            }
+          }
+       });
        status = closed;
-   }
+     }
   }
+   
+   public boolean onBackKeyPressed(int keyCode, KeyEvent keyEvent){
+     return this.webView.onKeyUp(keyCode, keyEvent);
+   }
 
   public void jsCallBack(final int type, final String message) {
     switch (type) {
@@ -162,6 +166,16 @@ public class ViewController extends CordovaPlugin {
       }
     
   }
+  
+  @Override
+  public void onReset() {
+      close();        
+  }
+  
+  @Override
+  public void onDestroy() {
+      close();        
+  }
 
   @Override
   public boolean execute(String action, JSONArray args, CallbackContext pCallbackContext) {
@@ -180,24 +194,44 @@ public class ViewController extends CordovaPlugin {
       return false;
     }
   }
-
-  public void onActivityResult(int requestCode, int resultCode, Intent intent) {
-    Log.d("onActivityResult", requestCode +":"+resultCode);
-
-    if (requestCode == START_WEBVIEW_REQUEST) {
-      this.closeView();
-    }
+  
+  public void sendUpdate(String pUrl){
+    Log.d("WebView", "received event, data : " + pUrl);
+    String js = "javascript:(function(){var e = document.createEvent('Events');e.initEvent('webviewUrlChange');e.data = '" + pUrl + "';document.dispatchEvent(e);})();";
+    webView.loadUrl(js);
   }
+  
+  class WebviewDialog extends Dialog {
 
-    private class WebViewUpdateReceiver extends BroadcastReceiver {
-
-      @Override
-      public void onReceive(Context pContext, Intent pIntent) {
-        Log.d("WebView", "received event, data : " + pIntent.getStringExtra("url"));
-        String js = "javascript:(function(){var e = document.createEvent('Events');e.initEvent('webviewUrlChange');e.data = '" + pIntent.getStringExtra("url") + "';document.dispatchEvent(e);})();";
-        webView.loadUrl(js);
-      }
-      
+    public WebviewDialog(Context context, int theme) {
+      super(context, theme);
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+      if(!webviewContainer.getIsEmbedMode()){
+        menu.add("Close");
+        super.onCreateOptionsMenu(menu);
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    @Override
+    public boolean onMenuItemSelected(int featureId, MenuItem item) {
+      if(!webviewContainer.getIsEmbedMode()){
+        if (item.getTitle().equals("Close")) {
+          close();
+          return true;
+        } else {
+          return false;
+        }
+      } else {
+        return false;
+      }
+    }
+    
+  }
 
 }

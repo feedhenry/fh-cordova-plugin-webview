@@ -9,23 +9,19 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.cordova.CordovaChromeClient;
+import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.CordovaWebView;
 import org.apache.cordova.CordovaWebViewClient;
-import org.apache.cordova.CordovaInterface;
 import org.apache.cordova.LOG;
 
-import android.app.Activity;
 import android.app.Application;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.KeyEvent;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.View.OnTouchListener;
@@ -37,27 +33,30 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 
 public class WebViewContainer {
-
-  OptionMenuManager optionMenu;
   CordovaWebView appView;
   String homeUrl;
   ImageButton back, forward, home, close;
   ProgressBar progressbar;
   int clickDown = 0;
   int clickUp = 1;
+  boolean isEmbedMode = false;
   
   private Bundle settings = null;
   private Context context = null;
   private ViewGroup mainLayout = null;
-  private Object controller = null;
+  private ViewController controller = null;
   
   private Map<String, Integer> mResourceMap;
   
-  public WebViewContainer(Context pContext, Bundle settings, Object controller) {
+  public WebViewContainer(Context pContext, Bundle settings, ViewController controller) {
     this.context = pContext;
     this.settings = settings;
     this.controller = controller;
     this.mResourceMap = new HashMap<String, Integer>();
+  }
+  
+  public void setEmbedMode(boolean pIsEmbedMode){
+    this.isEmbedMode = pIsEmbedMode;
   }
   
   public void onCreate() { 
@@ -71,27 +70,23 @@ public class WebViewContainer {
     mainLayout = null;
     mainLayout = new LinearLayout(this.context);
     LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT, 0.0F);
-  mainLayout.setLayoutParams(lp);
-  ((LinearLayout) mainLayout).setGravity(Gravity.CENTER_VERTICAL);
-  ((LinearLayout) mainLayout).setOrientation(LinearLayout.VERTICAL);
+    mainLayout.setLayoutParams(lp);
+    ((LinearLayout) mainLayout).setGravity(Gravity.CENTER_VERTICAL);
+    ((LinearLayout) mainLayout).setOrientation(LinearLayout.VERTICAL);
    
-    appView = new CordovaWebView(this.context);
+    appView = new FHCordovaWebview(this.context);
     appView.resumeTimers();
     
     CordovaChromeClient chromeClient = new CordovaChromeClient((CordovaInterface) context, appView);
     appView.setWebChromeClient(chromeClient);
     
-    final boolean bridgeSetup = setupBridge;
     CordovaWebViewClient webviewClient = new CordovaWebViewClient((CordovaInterface)context) {
       
       @Override
       public void onPageStarted(WebView view, String url, Bitmap favicon) {
         LOG.d("Webview window", "start to load " + url);
         super.onPageStarted(view, url, favicon);
-        Intent i = new Intent();
-        i.setAction(ViewController.BROADCAST_ACTION_FILTER);
-        i.putExtra("url", url);
-        context.sendBroadcast(i);
+        controller.sendUpdate(url);
       }
 
       @Override
@@ -173,29 +168,13 @@ public class WebViewContainer {
 
   private void close() {
     appView.stopLoading();
-    if(controller instanceof ViewController){
-        appView.handleDestroy();
-      ((ViewController)controller).close();
-    }else if(controller instanceof Activity){
-      ((Activity)controller).finish();
-    }
+    controller.close();
   }
 
-  public boolean onOptionsItemSelected(MenuItem item) {
-
-    if (item.getTitle() == "Close") {
-      close();
-      return true;
-
-    }
-    return false;
-  }
-
-
-  public boolean onCreateOptionsMenu(Menu menu) {
-    optionMenu = new OptionMenuManager();
-    optionMenu.popViewCtrlMenu(menu);
-    return true;
+  
+  
+  public CordovaWebView getWebView(){
+    return this.appView;
   }
 
   public boolean onKeyDown(int keyCode, KeyEvent event) {
@@ -331,6 +310,10 @@ public class WebViewContainer {
 
   }
   
+  public boolean getIsEmbedMode(){
+    return isEmbedMode;
+  }
+  
   public ViewGroup getView(){
     return mainLayout;
   }
@@ -363,10 +346,49 @@ public class WebViewContainer {
     Integer resId = mResourceMap.get(resourceName);
     if(null == resId){
       Application app = ((CordovaInterface)this.context).getActivity().getApplication();
-      resId = app.getResources().getIdentifier(pName, pExt, app.getPackageName());
+      resId = app.getResources().getIdentifier(pName, "drawable", app.getPackageName());
+      LOG.i("WebViewContainer", "Found resource name = " + resourceName + " id = " + resId + " pkg = " + app.getPackageName());
       mResourceMap.put(resourceName, resId);
     }
     return resId;
+  }
+  
+  class FHCordovaWebview extends CordovaWebView {
+    
+    public static final String TAG = "FHCordovaWebView";
+    
+    public FHCordovaWebview(Context context) {
+      super(context);
+    }
+    
+    public void postMessage(String id, Object data) {
+      if(!"exit".equalsIgnoreCase(id)){
+        if (this.pluginManager != null) {
+          this.pluginManager.postMessage(id, data);
+        }
+      }
+    }
+    
+    @Override
+    public boolean onKeyUp(int keyCode, KeyEvent event){
+      if(keyCode == KeyEvent.KEYCODE_BACK){
+        if(isEmbedMode){
+          //to keep backward compatibility, in embed mode, all the back key events will be proxied to the main webview
+          return controller.onBackKeyPressed(keyCode, event);
+        } else {
+          if(this.backHistory()){
+            return true;
+          } else {
+            //no more history to go back to, and this is not embed mode, close the view
+            close();
+            return true;
+          }
+        }
+      } else {
+        return false;
+      }
+    }
+    
   }
 
 }

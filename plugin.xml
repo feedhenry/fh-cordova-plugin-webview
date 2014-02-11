@@ -16,9 +16,7 @@
         </engines>
 
 
-        <js-module src="www/Webview.js" name="Webview">
-                <clobbers target="Webview" />
-        </js-module>
+        
 
         <!-- ios -->
         <platform name="ios">
@@ -27,6 +25,10 @@
                                 <param name="ios-package" value="Webview" />
                         </feature>
                 </config-file>
+
+                <js-module src="www/ios/Webview.js" name="Webview">
+                        <clobbers target="Webview" />
+                </js-module>
 
                 <header-file src="src/ios/Webview.h" />
                 <source-file src="src/ios/Webview.m" />
@@ -47,20 +49,18 @@
 
         <!-- android -->
         <platform name="android">
+                <js-module src="www/android/Webview.js" name="Webview">
+                        <clobbers target="navigator.webview" />
+                </js-module>
+
                 <config-file target="config.xml" parent="/*">
-                        <feature name="Webview">
+                        <feature name="ViewCtrl">
                                 <param name="android-package" value="com.feedhenry.phonegap.webview.ViewController" />
                         </feature>
                 </config-file>
 
-                <config-file target="AndroidManifest.xml" parent="/manifest/application">
-                        <activity android:name="com.feedhenry.phonegap.webview.WebViewIntent" android:label="@string/app_name" android:configChanges="orientation|keyboardHidden"></activity>
-                </config-file>
-
-                <source-file src="src/android/OptionMenuManager.java" target-dir="src/com/feedhenry/phonegap/webview" />
                 <source-file src="src/android/ViewController.java" target-dir="src/com/feedhenry/phonegap/webview" />
                 <source-file src="src/android/WebViewContainer.java" target-dir="src/com/feedhenry/phonegap/webview" />
-                <source-file src="src/android/WebViewIntent.java" target-dir="src/com/feedhenry/phonegap/webview" />
 
                 <source-file src="resources/android/close.png" target-dir="res/drawable/" />
                 <source-file src="resources/android/close_off.png" target-dir="res/drawable/" />
